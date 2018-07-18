@@ -37,3 +37,4 @@ for i = 1:num_images
     %im_density = get_density_map_gaussian(im,annPoints);    
     %csvwrite([gt_path_csv ,'IMG_',num2str(i) '.csv'], im_density);       
 end
+disp(max(gt_people_count));

@@ -4,9 +4,9 @@ rng(seed)
 N = 9;
 dataset_name = ['ucsd_patches_' num2str(N)];
 
-image_path = ['../data/original/uscd/train_data/images/'];
-out_gt_path_csv = ['../data/original/uscd/train_data/gt_truth_csv/'];
-gt_path = ['../data/original/uscd/train_data/ground_truth/'];
+image_path = ['../data/original/ucsd/train_data/images/'];
+out_gt_path_csv = ['../data/original/ucsd/train_data/gt_truth_csv/'];
+gt_path = ['../data/original/ucsd/train_data/ground_truth/'];
 
 output_path = '../data/ucsd_formatted_trainval/';
 train_path_img = strcat(output_path, dataset_name,'/train/');
@@ -21,7 +21,7 @@ mkdir(train_path_den);
 mkdir(val_path_img);
 mkdir(val_path_den);
 
-
+load([gt_path,'vidf1_33_roi_mainwalkway.mat']);
 num_images = 800;
 
 num_val = ceil(num_images*0.1);
@@ -65,7 +65,7 @@ for idx = 1:num_images
     a_w = wn2+1; b_w = w - wn2;
     a_h = hn2+1; b_h = h - hn2;
     
-    im_density = get_density_map_gaussian_ucsd(im,annPoints);
+    im_density = ucsd_density_map(im,annPoints,roi.xi,roi.yi);
     for j = 1:N
         
         x = floor((b_w - a_w) * rand + a_w);

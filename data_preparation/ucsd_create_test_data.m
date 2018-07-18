@@ -1,8 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % File to create grount truth density map for test set%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-clc; 
+clc;
 image_path = ['../data/original/ucsd/test_data/images/'];
 gt_path = ['../data/original/ucsd/test_data/ground_truth/'];
 out_gt_path_csv = ['../data/original/ucsd/test_data/gt_truth_csv/'];
@@ -11,6 +10,7 @@ mkdir(out_gt_path_csv);
 num_images_1 = 2; % [0,1,2] + [3,4,5,6] 
 num_images_2 = 9; % [7,8,9]
 load([gt_path,'vidf1_33_roi_mainwalkway.mat']);
+
 for i = 0:num_images_1
     fprintf(1,'Processing %3d/%d files\n', i, num_images_1);
     gt_file_name = [gt_path,'vidf1_33_00',num2str(i),'_frame_full.mat'];
@@ -26,9 +26,8 @@ for i = 0:num_images_1
         im = rgb2gray(im);
         end  
         annPoints =  frame{t}.loc;
-        [h, w, c] = size(im);
-        im_density = ucsd_density_map(im,annPoints);    
-        %csvwrite([out_gt_path_csv ,'IMG_',num2str(pic_num),'.csv'], im_density);
+        im_density = ucsd_density_map(im,annPoints,roi.xi,roi.yi);
+        csvwrite([out_gt_path_csv ,'IMG_',num2str(pic_num),'.csv'], im_density);
     end      
      
 end
@@ -48,9 +47,8 @@ for i = 7:num_images_2
         im = rgb2gray(im);
         end  
         annPoints =  frame{t}.loc;
-        [h, w, c] = size(im);
-        im_density = ucsd_density_map(im,annPoints);    
-        %csvwrite([out_gt_path_csv ,'IMG_',num2str(pic_num),'.csv'], im_density);
+        im_density = ucsd_density_map(im,annPoints,roi.xi,roi.yi);    
+        csvwrite([out_gt_path_csv ,'IMG_',num2str(pic_num),'.csv'], im_density);
     end      
      
 end
