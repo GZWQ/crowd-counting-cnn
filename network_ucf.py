@@ -53,9 +53,9 @@ class MCNN:
         print('load', kind, 'data from dataset', dataset, 'finished')
         return data
 
-    def data_pre_test(self, dataset):
-        img_path = './data/original/ucsd/test_data/images/'
-        den_path = './data/original/ucsd/test_data/gt_truth_csv/'
+    def data_pre_test(self, dataset,data_file_number):
+        img_path = './data/ucf_formatted_trainval/ucf_patches_9/train_cv' + str(data_file_number) + '/'
+        den_path = './data/ucf_formatted_trainval/ucf_patches_9/train_den_cv' + str(data_file_number) + '/'
         print('loading test data from dataset', dataset, '...')
         img_names = os.listdir(img_path)
         img_num = len(img_names)
@@ -64,14 +64,14 @@ class MCNN:
         for i in range(1, img_num ):
             if i % 50 == 0:
                 print(i, '/', img_num)
-            name = 'IMG_' + str(i) + '.jpg'
+            name = img_names[i - 1]
             print(name)
             img = cv2.imread(img_path + name, 0)
             img = np.array(img)
             img = (img - 127.5) / 128
             den = np.loadtxt(open(den_path + name[:-4] + '.csv'), delimiter=",")
             den_sum = np.sum(den)
-            data.append([img, den_sum])
+            data.append([img, den_sum,name])
 
             # if i <= 2:
             # heatmap(den, i, dataset, 'act')
@@ -172,7 +172,8 @@ class MCNN:
             data_val = []
             for i in range(1,6):
                 if i==k_fold:
-                    data_val = self.data_pre_train('train', self.dataset, i) #validation dataset
+                    continue
+                    # data_val = self.data_pre_train('train', self.dataset, i) #validation dataset
                 else:
                     data_train.extend(self.data_pre_train('train', self.dataset,i))  # 训练数据预处理，density map缩小1/4
 
@@ -198,9 +199,12 @@ class MCNN:
                         print('fold ',k_fold,'epoch', epoch, 'step', i, 'mae:', m)
                     epoch_mae += m
                 epoch_mae /= len(data_train)
+                saver = tf.train.Saver()
+                saver.save(sess, 'model' + self.dataset +'/fold_'+str(k_fold)+ '/model.ckpt')
                 print('epoch', epoch + 1, 'train_mae:', epoch_mae)
 
                 # validation process
+                '''
                 val_mae = 0
                 val_mse = 0
                 for i in range(len(data_val)):
@@ -219,6 +223,7 @@ class MCNN:
                 all_validate_mse.append(val_mse)
                 print('epoch', epoch, 'valid_mae:', val_mae, 'valid_mse:', val_mse)
                 best_mse = max(best_mse,val_mse)
+                '''
                 # if val_mae < best_mae:
                 #     best_mae = val_mae
                 #     print('best mae so far, saving model.')
@@ -227,35 +232,43 @@ class MCNN:
                 # else:
                 #     print('best mae:', best_mae)
                 print('**************************')
-            return sum(all_validate_mae)/len(all_validate_mae),sum(all_validate_mse)/len(all_validate_mse)
+            # return sum(all_validate_mae)/len(all_validate_mae),sum(all_validate_mse)/len(all_validate_mse)
 
-    def test(self):
+    def test(self,k_fold):
         with tf.Session() as sess:
             saver = tf.train.Saver()
-            saver.restore(sess, 'model' + self.dataset + '/model.ckpt')
-            data = self.data_pre_test(self.dataset)
+            saver.restore(sess, 'model' + self.dataset + '/fold_'+str(k_fold)+'/model.ckpt')
+            data = self.data_pre_test(self.dataset,k_fold)
 
             mae = 0
             mse = 0
+            whole_ture = [0 for _ in range(10)]
+            whole_ture = np.array(whole_ture)
+            whole_predict = [0 for _ in range(10)]
+            whole_predict = np.array(whole_predict)
             for i in range(1, len(data) + 1):
+
                 if i % 20 == 0:
                     print(i, '/', len(data))
                 d = data[i - 1]
                 x_in = d[0]
                 y_a = d[1]
+                name = d[2]
+                pos = int(name[:-6])
 
                 x_in = np.reshape(d[0], (1, d[0].shape[0], d[0].shape[1], 1))
                 y_p_den = sess.run(self.y_pre, feed_dict={self.x: x_in})
 
                 y_p = np.sum(y_p_den)
 
-                # if i <= 2:
-                # y_p_den = np.reshape(y_p_den, (y_p_den.shape[1], y_p_den.shape[2]))
-                # heatmap(y_p_den, i, self.dataset, 'pre')
-                mae += abs(y_a - y_p)
-                mse += (y_a - y_p) * (y_a - y_p)
+                whole_ture[(pos-1)%10] += y_a
+                whole_predict[(pos-1)%10] += y_p
 
-            mae /= len(data)
-            mse = math.sqrt(mse / len(data))
+
+            err = np.abs(whole_predict-whole_ture)
+            mae = sum(err) / len(whole_ture)
+            mse = sum(err**2)/len(whole_ture)
+            mse = math.sqrt(mse)
             print('mae: ', mae)
             print('mse: ', mse)
+            return mae,mse
