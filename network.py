@@ -68,7 +68,7 @@ class MCNN:
             img = cv2.imread(img_path + name, 0)
             img = np.array(img)
             img = (img - 127.5) / 128
-            den = np.loadtxt(den_path + name[:-4] + '.csv', delimiter = ",")
+            den = np.loadtxt(open(den_path + name[:-4] + '.csv'), delimiter=",")
             den_sum = np.sum(den)
             data.append([img, den_sum])
 

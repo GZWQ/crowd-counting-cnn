@@ -1,6 +1,5 @@
 function im_density = get_density_map_gaussian(im,points)
 
-
 im_density = zeros(size(im)); 
 [h,w] = size(im_density);
 
